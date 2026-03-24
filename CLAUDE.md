@@ -23,3 +23,4 @@
 - NEVER use the AskUserQuestion tool. Always ask questions as plain text.
 - One task per session. Verify. Commit. Exit.
 - Keep tasks small and independently verifiable.
+- After each task: append any discovered commands, gotchas, or patterns to AGENTS.md.

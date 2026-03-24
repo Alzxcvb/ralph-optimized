@@ -10,11 +10,13 @@ Pick ONE task from `IMPLEMENTATION_PLAN.md`, implement it, verify it works, and 
 1. **Read IMPLEMENTATION_PLAN.md** to find the next incomplete task
 2. **Read relevant specs** in `specs/` for requirements
 3. **Read CLAUDE.md** for project conventions
-4. **Implement the task** — edit or create files as needed
-5. **Verify** — run tests, syntax checks, or whatever validation the task requires
-6. **Update IMPLEMENTATION_PLAN.md** — change `[ ]` to `[x]`
-7. **Commit** all changes with message format: `feat(TASK-ID): description`
-8. **Exit** so the next iteration starts fresh
+4. **Read AGENTS.md** for discovered commands, gotchas, and patterns from prior iterations
+5. **Implement the task** — edit or create files as needed
+6. **Verify** — run tests, syntax checks, or whatever validation the task requires
+7. **Update IMPLEMENTATION_PLAN.md** — change `[ ]` to `[x]`
+8. **Update AGENTS.md** — append any new commands, gotchas, or patterns discovered this session
+9. **Commit** all changes with message format: `feat(TASK-ID): description`
+10. **Exit** so the next iteration starts fresh
 
 ## Task Selection Rules
 

@@ -13,3 +13,11 @@ Thumbs.db
 
 # Node (if applicable)
 node_modules/
+
+# Environment / secrets — never commit these
+.env
+.env.local
+.env.*
+
+# Ralph working directory (logs, rate limit state)
+.ralph/
