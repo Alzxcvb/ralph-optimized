@@ -17,6 +17,11 @@ CONSECUTIVE_ERRORS=0
 MAX_CONSECUTIVE_ERRORS=3
 ERROR_COOLDOWN=60
 
+# ETA tracking — computed from rolling avg of successful iterations
+TOTAL_ELAPSED=0
+SUCCESS_COUNT=0
+RUN_START=$(date +%s)
+
 # Rate limiting — prevents runaway token burn overnight
 MAX_CALLS_PER_HOUR=30
 CALL_COUNT_FILE="$RALPH_DIR/.calls"
@@ -98,10 +103,24 @@ while [ $ITERATION -lt $MAX_ITERATIONS ]; do
         INCOMPLETE=${INCOMPLETE:-0}
         COMPLETE=$(grep -c "^- \[x\]" "$PLAN_FILE" 2>/dev/null | tr -cd '0-9' || echo "0")
         COMPLETE=${COMPLETE:-0}
-        BLOCKED=$(grep -c "BLOCKED:" "$PLAN_FILE" 2>/dev/null | tr -cd '0-9' || echo "0")
+        # Anchor to list-item lines so the literal word "BLOCKED:" in the
+        # instructions header doesn't trip a false positive.
+        BLOCKED=$(grep -cE "^- .*BLOCKED:" "$PLAN_FILE" 2>/dev/null | tr -cd '0-9' || echo "0")
         BLOCKED=${BLOCKED:-0}
 
         log "Status: $COMPLETE complete, $INCOMPLETE remaining, $BLOCKED blocked"
+
+        # ETA — uses rolling avg of successful iterations so far
+        if [ "$SUCCESS_COUNT" -gt 0 ] && [ "$INCOMPLETE" -gt 0 ]; then
+            AVG_ITER=$((TOTAL_ELAPSED / SUCCESS_COUNT))
+            ETA_SECS=$((INCOMPLETE * AVG_ITER))
+            ETA_MIN=$((ETA_SECS / 60))
+            RUN_NOW=$(date +%s)
+            ELAPSED_SO_FAR=$(((RUN_NOW - RUN_START) / 60))
+            log "ETA: ~${ETA_MIN} min remaining (avg ${AVG_ITER}s/task, ${ELAPSED_SO_FAR} min elapsed, ${SUCCESS_COUNT} tasks done)"
+        elif [ "$INCOMPLETE" -gt 0 ]; then
+            log "ETA: pending — first iteration will calibrate"
+        fi
         log ""
 
         if [ "$INCOMPLETE" -eq 0 ] 2>/dev/null; then
@@ -113,7 +132,7 @@ while [ $ITERATION -lt $MAX_ITERATIONS ]; do
 
         if [ "$BLOCKED" -gt 0 ] 2>/dev/null && [ "$INCOMPLETE" -eq "$BLOCKED" ] 2>/dev/null; then
             log "All remaining tasks are blocked. Human intervention needed."
-            grep "BLOCKED:" "$PLAN_FILE" | tee -a "$LOG_FILE"
+            grep -E "^- .*BLOCKED:" "$PLAN_FILE" | tee -a "$LOG_FILE"
             exit 1
         fi
     fi
@@ -194,6 +213,8 @@ while [ $ITERATION -lt $MAX_ITERATIONS ]; do
         log "Cooling down for ${ERROR_COOLDOWN}s..."
         sleep $ERROR_COOLDOWN
     else
+        TOTAL_ELAPSED=$((TOTAL_ELAPSED + ITER_ELAPSED))
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
         log "Done in ${ITER_ELAPSED}s. Sleeping 15s before next iteration..."
         sleep 15
     fi
